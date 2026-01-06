@@ -1,0 +1,11 @@
+name: housing-project
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    - pandas
+    - scikit-learn
+    - mlflow==2.19.0
+    - numpy
