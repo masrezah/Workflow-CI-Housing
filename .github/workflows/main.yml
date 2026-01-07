@@ -23,12 +23,17 @@ jobs:
 
     - name: Install Dependencies
       run: |
+        # Install library yang dibutuhkan
         pip install pandas scikit-learn mlflow==2.19.0 numpy
+        # Jika ada library lain di requirements.txt, install juga:
+        # pip install -r Membangun_model/requirements.txt
 
-    - name: Run Training Script
+    - name: Run Training via MLflow Project
       run: |
-        cd MLProject
-        python modelling.py
+        # Perintah ini akan membaca file MLproject di folder 'Membangun_model'
+        # dan menjalankan command 'python modelling.py' yang terdaftar di sana.
+        # Pastikan nama folder sesuai dengan struktur repo kamu ('Membangun_model' atau 'MLProject')
+        mlflow run Membangun_model --env-manager=local
 
     - name: Commit and Push Metrics (Syarat Skilled)
       run: |
@@ -38,8 +43,9 @@ jobs:
         # Cek status git
         git status
         
-        # Tambahkan file metrics.txt yang baru dibuat
-        git add MLProject/metrics.txt
+        # Sesuaikan path metrics.txt jika perlu (misal: Membangun_model/metrics.txt)
+        # Git add akan gagal jika file tidak ditemukan, jadi pastikan modelling.py generate file ini
+        git add Membangun_model/metrics.txt || echo "metrics.txt not found"
         
         # Commit dan Push jika ada perubahan
         git commit -m "Auto-update: Model metrics updated by GitHub Actions" || echo "No changes to commit"
