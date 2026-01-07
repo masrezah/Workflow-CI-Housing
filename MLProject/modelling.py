@@ -3,53 +3,46 @@ import mlflow
 import mlflow.sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import sys
-import os
+from sklearn.metrics import mean_squared_error
 
-# 1. Load Data
-# Kita gunakan path relatif agar aman saat dijalankan robot GitHub
-current_dir = os.path.dirname(os.path.abspath(__file__))
-data_path = os.path.join(current_dir, "clean_housing_data.csv")
+# 1. Load Dataset Bersih
+# Pastikan path ini sesuai dengan struktur folder Anda
+df = pd.read_csv('housing_preprocessing/clean_housing_data.csv')
 
-print(f"Memuat data dari: {data_path}")
-df = pd.read_csv(data_path)
-
+# Pisahkan Fitur (X) dan Target (y)
+# Sesuaikan 'MEDV' jika nama kolom target di dataset Anda berbeda
 X = df.drop('MEDV', axis=1)
 y = df['MEDV']
+
+# Split Data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 2. Training Model (Parameter Fixed untuk CI)
-# Robot akan menggunakan parameter ini
-n_estimators = 100
-max_depth = 10
+# =================================================================
+# BAGIAN PENTING: AKTIFKAN AUTOLOG
+# =================================================================
+# Ini syarat mutlak untuk Kriteria Basic.
+# Autolog akan otomatis mencatat parameter, metrik, dan menyimpan model.
+mlflow.autolog()
 
-print(f"Training RandomForest (n_estimators={n_estimators}, max_depth={max_depth})...")
-rf = RandomForestRegressor(n_estimators=n_estimators, max_depth=max_depth, random_state=42)
-rf.fit(X_train, y_train)
+# =================================================================
+# TRAINING MODEL DENGAN MLFLOW
+# =================================================================
+with mlflow.start_run():
+    # Definisikan Model
+    rf = RandomForestRegressor(n_estimators=100, random_state=42)
+    
+    # Latih Model
+    # Saat .fit() dipanggil, MLflow autolog akan bekerja otomatis
+    rf.fit(X_train, y_train)
+    
+    # Evaluasi (Opsional, karena autolog biasanya sudah menghitung ini)
+    predictions = rf.predict(X_test)
+    mse = mean_squared_error(y_test, predictions)
+    print(f"Model trained. MSE: {mse}")
 
-# 3. Evaluasi
-y_pred = rf.predict(X_test)
-mae = mean_absolute_error(y_test, y_pred)
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
+    # TIDAK PERLU ada baris:
+    # mlflow.log_param(...)  <- HAPUS
+    # mlflow.log_metric(...) <- HAPUS
+    # mlflow.sklearn.log_model(...) <- HAPUS (Autolog sudah menangani ini)
 
-print(f"Hasil -> MAE: {mae}, MSE: {mse}, R2: {r2}")
-
-# 4. Simpan Hasil ke File (Syarat Skilled: Menyimpan Artefak)
-# Kita simpan metrik ke file teks agar bisa di-push balik ke GitHub
-metrics_file = os.path.join(current_dir, "metrics.txt")
-with open(metrics_file, "w") as f:
-    f.write(f"MAE: {mae}\n")
-    f.write(f"MSE: {mse}\n")
-    f.write(f"R2 Score: {r2}\n")
-
-print(f"Metrik berhasil disimpan ke {metrics_file}")
-
-# 5. MLflow Tracking (Opsional untuk CI, tapi baik untuk standar)
-mlflow.log_param("n_estimators", n_estimators)
-mlflow.log_param("max_depth", max_depth)
-mlflow.log_metric("mae", mae)
-mlflow.log_metric("mse", mse)
-mlflow.log_metric("r2", r2)
-mlflow.sklearn.log_model(rf, "model")
+print("Training selesai. Cek MLflow UI untuk artefak.")
