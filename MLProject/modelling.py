@@ -7,7 +7,7 @@ from sklearn.metrics import mean_squared_error
 
 # 1. Load Dataset Bersih
 # Pastikan path ini sesuai dengan struktur folder Anda
-df = pd.read_csv('housing_preprocessing/clean_housing_data.csv')
+df = pd.read_csv('clean_housing_data.csv')
 
 # Pisahkan Fitur (X) dan Target (y)
 # Sesuaikan 'MEDV' jika nama kolom target di dataset Anda berbeda
