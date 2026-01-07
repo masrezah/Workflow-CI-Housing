@@ -23,34 +23,42 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        # Install library yang dibutuhkan untuk menjalankan MLflow dan script kamu
         pip install pandas scikit-learn mlflow==2.19.0 numpy
 
-    - name: Debug Directory Structure (Opsional)
+    - name: Find and Run MLflow Project
       run: |
-        # Ini untuk melihat struktur folder, berguna jika masih ada error path
-        ls -R
-
-    - name: Run Training via MLflow Project
-      run: |
-        # Perintah ini menjalankan MLflow Project.
-        # Kita arahkan ke folder 'Membangun_model' yang ada di dalam folder utama.
-        # Flag --env-manager=local agar menggunakan library yang sudah di-install di atas.
-        mlflow run SMSML_Fathan-Rezah-Ardhiansa/Membangun_model --env-manager=local
+        # 1. Cari di mana file MLproject berada
+        echo "Sedang mencari file MLproject..."
+        PROJECT_FILE=$(find . -name MLproject -type f | head -n 1)
+        
+        if [ -z "$PROJECT_FILE" ]; then
+          echo "ERROR: File MLproject tidak ditemukan di repository ini!"
+          echo "Daftar semua file:"
+          ls -R
+          exit 1
+        fi
+        
+        # 2. Ambil nama foldernya
+        PROJECT_DIR=$(dirname "$PROJECT_FILE")
+        echo "File ditemukan di: $PROJECT_FILE"
+        echo "Menjalankan MLflow project di folder: $PROJECT_DIR"
+        
+        # 3. Jalankan MLflow di folder yang ditemukan tadi
+        mlflow run "$PROJECT_DIR" --env-manager=local
 
     - name: Commit and Push Metrics (Syarat Skilled)
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         
-        # Cek status git untuk melihat file apa yang berubah/baru
-        git status
+        # Cari file metrics.txt di mana saja
+        METRICS_FILE=$(find . -name metrics.txt -type f | head -n 1)
         
-        # Tambahkan file metrics.txt. 
-        # Pastikan path ini sesuai dengan tempat file metrics.txt dibuat oleh script kamu.
-        # Jika script menyimpannya di folder yang sama dengan modelling.py:
-        git add SMSML_Fathan-Rezah-Ardhiansa/Membangun_model/metrics.txt || echo "metrics.txt tidak ditemukan, melewati tahap ini."
-        
-        # Commit dan Push jika ada perubahan
-        git commit -m "Auto-update: Model metrics updated by GitHub Actions" || echo "Tidak ada perubahan untuk di-commit"
-        git push
+        if [ -n "$METRICS_FILE" ]; then
+           echo "Metrics ditemukan di: $METRICS_FILE"
+           git add "$METRICS_FILE"
+           git commit -m "Auto-update: Model metrics updated by GitHub Actions" || echo "Tidak ada perubahan untuk di-commit"
+           git push
+        else
+           echo "Peringatan: metrics.txt tidak ditemukan. Pastikan script modelling.py membuatnya."
+        fi
