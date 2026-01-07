@@ -27,13 +27,12 @@ jobs:
 
     - name: Find and Run MLflow Project
       run: |
-        # 1. Cari di mana file MLproject berada
+        # 1. Cari file MLproject (huruf besar/kecil tidak masalah pakai -iname)
         echo "Sedang mencari file MLproject..."
-        PROJECT_FILE=$(find . -name MLproject -type f | head -n 1)
+        PROJECT_FILE=$(find . -iname "mlproject" -type f | head -n 1)
         
         if [ -z "$PROJECT_FILE" ]; then
-          echo "ERROR: File MLproject tidak ditemukan di repository ini!"
-          echo "Daftar semua file:"
+          echo "ERROR: File MLproject tidak ditemukan!"
           ls -R
           exit 1
         fi
@@ -41,24 +40,12 @@ jobs:
         # 2. Ambil nama foldernya
         PROJECT_DIR=$(dirname "$PROJECT_FILE")
         echo "File ditemukan di: $PROJECT_FILE"
-        echo "Menjalankan MLflow project di folder: $PROJECT_DIR"
         
-        # 3. Jalankan MLflow di folder yang ditemukan tadi
-        mlflow run "$PROJECT_DIR" --env-manager=local
-
-    - name: Commit and Push Metrics (Syarat Skilled)
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        
-        # Cari file metrics.txt di mana saja
-        METRICS_FILE=$(find . -name metrics.txt -type f | head -n 1)
-        
-        if [ -n "$METRICS_FILE" ]; then
-           echo "Metrics ditemukan di: $METRICS_FILE"
-           git add "$METRICS_FILE"
-           git commit -m "Auto-update: Model metrics updated by GitHub Actions" || echo "Tidak ada perubahan untuk di-commit"
-           git push
-        else
-           echo "Peringatan: metrics.txt tidak ditemukan. Pastikan script modelling.py membuatnya."
+        # 3. Rename paksa jadi MLproject agar dikenali MLflow (Jaga-jaga)
+        if [ "$(basename "$PROJECT_FILE")" != "MLproject" ]; then
+            mv "$PROJECT_FILE" "$PROJECT_DIR/MLproject"
+            echo "Renamed $(basename "$PROJECT_FILE") to MLproject"
         fi
+        
+        # 4. Jalankan MLflow
+        mlflow run "$PROJECT_DIR" --env-manager=local
