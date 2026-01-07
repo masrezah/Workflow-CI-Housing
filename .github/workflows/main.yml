@@ -23,30 +23,34 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        # Install library yang dibutuhkan
+        # Install library yang dibutuhkan untuk menjalankan MLflow dan script kamu
         pip install pandas scikit-learn mlflow==2.19.0 numpy
-        # Jika ada library lain di requirements.txt, install juga:
-        # pip install -r Membangun_model/requirements.txt
+
+    - name: Debug Directory Structure (Opsional)
+      run: |
+        # Ini untuk melihat struktur folder, berguna jika masih ada error path
+        ls -R
 
     - name: Run Training via MLflow Project
       run: |
-        # Perintah ini akan membaca file MLproject di folder 'Membangun_model'
-        # dan menjalankan command 'python modelling.py' yang terdaftar di sana.
-        # Pastikan nama folder sesuai dengan struktur repo kamu ('Membangun_model' atau 'MLProject')
-        mlflow run Membangun_model --env-manager=local
+        # Perintah ini menjalankan MLflow Project.
+        # Kita arahkan ke folder 'Membangun_model' yang ada di dalam folder utama.
+        # Flag --env-manager=local agar menggunakan library yang sudah di-install di atas.
+        mlflow run SMSML_Fathan-Rezah-Ardhiansa/Membangun_model --env-manager=local
 
     - name: Commit and Push Metrics (Syarat Skilled)
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         
-        # Cek status git
+        # Cek status git untuk melihat file apa yang berubah/baru
         git status
         
-        # Sesuaikan path metrics.txt jika perlu (misal: Membangun_model/metrics.txt)
-        # Git add akan gagal jika file tidak ditemukan, jadi pastikan modelling.py generate file ini
-        git add Membangun_model/metrics.txt || echo "metrics.txt not found"
+        # Tambahkan file metrics.txt. 
+        # Pastikan path ini sesuai dengan tempat file metrics.txt dibuat oleh script kamu.
+        # Jika script menyimpannya di folder yang sama dengan modelling.py:
+        git add SMSML_Fathan-Rezah-Ardhiansa/Membangun_model/metrics.txt || echo "metrics.txt tidak ditemukan, melewati tahap ini."
         
         # Commit dan Push jika ada perubahan
-        git commit -m "Auto-update: Model metrics updated by GitHub Actions" || echo "No changes to commit"
+        git commit -m "Auto-update: Model metrics updated by GitHub Actions" || echo "Tidak ada perubahan untuk di-commit"
         git push
